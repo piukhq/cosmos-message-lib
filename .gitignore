@@ -1,0 +1,10 @@
+.vscode
+.idea
+__pycache__
+.DS_Store
+.mypy_cache
+*.env
+dist
+*.egg-info
+.dccache
+.coverage
