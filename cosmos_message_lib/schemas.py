@@ -1,12 +1,13 @@
 from datetime import datetime as dt
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, Field, validator
 
 from .enums import ActivityType
 
 
 class ActivitySchema(BaseModel):
+    id: UUID = Field(default_factory=uuid4)
     type: ActivityType
     datetime: dt
     underlying_datetime: dt
@@ -21,10 +22,10 @@ class ActivitySchema(BaseModel):
 
     @validator("type")
     @classmethod
-    def convert_type(cls, value: ActivityType) -> str:
+    def get_enum_name(cls, value: ActivityType) -> str:
         return value.name
 
-    @validator("user_id")
+    @validator("id", "user_id", always=True)
     @classmethod
-    def convert_user_id(cls, value: UUID) -> str:
+    def uuid_to_str(cls, value: UUID) -> str:
         return str(value)
