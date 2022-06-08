@@ -4,10 +4,13 @@ from typing import TYPE_CHECKING, cast
 
 from kombu import Producer, producers
 
+from .schemas import ActivitySchema
+
 if TYPE_CHECKING:
     from kombu import BrokerConnection, Exchange
 
 logger = logging.getLogger(__name__)
+
 RETRY_POLICY: dict = {
     "interval_start": 0,  # First retry immediately,
     "interval_step": 2,  # then increase by 2s for every retry.
@@ -39,3 +42,18 @@ def send_activity(
             )
     except Exception:  # pylint: disable=broad-except
         logger.exception("Failed to send event: %s", payload)
+
+
+def verify_payload_and_send_activity(
+    connection: "BrokerConnection",
+    exchange: "Exchange",
+    payload: dict,
+    routing_key: str,
+    retry_policy: dict = None,
+) -> None:
+    try:
+        verified_payload = ActivitySchema(**payload).dict()
+    except Exception:  # pylint: disable=broad-except
+        logger.exception("Failed to validate payload: %s", payload)
+
+    send_activity(connection, exchange, verified_payload, routing_key, retry_policy)
