@@ -24,7 +24,7 @@ jobs:
       - run: black --check .
       - run: isort --check .
       - run: mypy .
-      - run: pylint retry_tasks_lib tests
+      - run: pylint cosmos_message_lib
   create_tag_release:
     if: github.event_name == 'release' && github.event.action == 'published'
     name: create_tag_release
