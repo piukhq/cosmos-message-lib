@@ -20,11 +20,6 @@ class ActivitySchema(BaseModel):
     campaigns: list[str]
     data: dict
 
-    @validator("type")
-    @classmethod
-    def get_enum_name(cls, value: ActivityType) -> str:
-        return value.name
-
     @validator("id", "user_id", always=True)
     @classmethod
     def uuid_to_str(cls, value: UUID) -> str:
