@@ -42,6 +42,7 @@ def send_activity(
             )
     except Exception:  # pylint: disable=broad-except
         logger.exception("Failed to send event: %s", payload)
+        raise
 
 
 def verify_payload_and_send_activity(
@@ -55,5 +56,6 @@ def verify_payload_and_send_activity(
         verified_payload = ActivitySchema(**payload).dict()
     except Exception:  # pylint: disable=broad-except
         logger.exception("Failed to validate payload: %s", payload)
+        raise
 
     send_activity(connection, exchange, verified_payload, routing_key, retry_policy)
