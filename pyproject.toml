@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cosmos-message-lib"
-version = "0.3.1"
+version = "1.0.0"
 readme = "README.md"
 packages = [{include = "cosmos_message_lib"}]
 description = "helpers functions and schemas for setting up activities pub/sub with kombu and rabbitmq"
