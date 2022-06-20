@@ -1,0 +1,7 @@
+[run]
+omit = *test*
+branch = True
+
+[report]
+fail_under = 69
+exclude_lines = pragma: no cover

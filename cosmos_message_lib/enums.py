@@ -6,7 +6,7 @@ if TYPE_CHECKING:
 
 
 class ActivityType(Enum):
-    TRANSACTION_HISTORY = auto()
+    TX_HISTORY = auto()
 
     @classmethod
     def __get_validators__(cls) -> "CallableGenerator":

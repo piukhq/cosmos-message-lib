@@ -1,14 +1,30 @@
-from kombu import BrokerConnection, Exchange
-
-RABBITMQ_URI: str = "amqp://guest:guest@localhost:5672//"
-MESSAGE_EXCHANGE_NAME: str = "hubble-activities"
+from kombu import Connection, Exchange, Queue
 
 
 def get_connection_and_exchange(
-    rabbitmq_uri: str = RABBITMQ_URI, *, message_exchange_name: str = MESSAGE_EXCHANGE_NAME
-) -> tuple[BrokerConnection, Exchange]:
+    rabbitmq_dsn: str, message_exchange_name: str, setup_deadletter: bool = True
+) -> tuple[Connection, Exchange]:
+
+    conn = Connection(rabbitmq_dsn)
+
+    if setup_deadletter:
+        deadletter_exchange = Exchange(
+            name=message_exchange_name + "_dlx",
+            type="fanout",
+            durable=True,
+            delivery_mode="persistent",
+            auto_delete=False,
+        )
+        deadletter_queue = Queue(
+            name=deadletter_exchange.name + "_queue",
+            exchange=deadletter_exchange,
+            durable=True,
+            auto_delete=False,
+        )
+
+        deadletter_queue(conn).declare()
 
     return (
-        BrokerConnection(rabbitmq_uri),
+        conn,
         Exchange(message_exchange_name, type="topic", durable=True, delivery_mode="persistent"),
     )

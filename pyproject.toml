@@ -28,6 +28,10 @@ black = "^22.3.0"
 isort = "^5.10.1"
 xenon = "^0.9.0"
 ipython = "^8.4.0"
+pytest = "^7.1.2"
+pylint-pytest = "^1.1.2"
+pytest-mock = "^3.7.0"
+pytest-cov = "^3.0.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.8"]
@@ -58,6 +62,7 @@ plugins = [
 
 [tool.pylint.MASTER]
 load-plugins=[
+    "pylint_pytest",
     "pylint.extensions.mccabe"
 ]
 
