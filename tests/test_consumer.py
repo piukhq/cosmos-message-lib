@@ -4,7 +4,7 @@ from unittest.mock import ANY, Mock
 from kombu import Consumer
 from pytest_mock import MockerFixture
 
-from cosmos_message_lib.producer import send_activity
+from cosmos_message_lib.producer import send_message
 
 if TYPE_CHECKING:
 
@@ -17,11 +17,11 @@ def test_send_and_receive_ok(consumer: "TestActivityConsumer", mocker: MockerFix
     mock_logger = mocker.patch.object(consumer, "logger")
 
     payload = {"test": "payload"}
-    send_activity(
+    send_message(
         consumer.connection,
         consumer.exchange,
         payload,
-        consumer.routing_key,
+        consumer.queue.routing_key,
     )
 
     for _ in consumer.consume(limit=1):
@@ -36,11 +36,11 @@ def test_send_and_receive_deadletter(
 
     mock_logger = mocker.patch.object(consumer, "logger")
     payload = {"test": "payload"}
-    send_activity(
+    send_message(
         consumer.connection,
         consumer.exchange,
         payload,
-        consumer.routing_key,
+        consumer.queue.routing_key,
     )
 
     # pylint: disable=unused-argument

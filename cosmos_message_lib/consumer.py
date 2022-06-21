@@ -3,39 +3,62 @@ import logging
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING, Type
 
-from kombu import Queue
+from kombu import Exchange, Queue
 from kombu.mixins import ConsumerMixin
 
 if TYPE_CHECKING:
     from amqp import Channel
     from kombu import Connection
     from kombu import Consumer as ConsumerClass
-    from kombu import Exchange, Message
+    from kombu import Message
 
 
-class ActivityConsumer(ConsumerMixin, metaclass=ABCMeta):
-    queue_name: str
-    routing_key: str
-
-    def __init__(self, connection: Type["Connection"], exchange: Type["Exchange"], use_deadletter: bool = True):
+class AbstractMessageConsumer(ConsumerMixin, metaclass=ABCMeta):
+    def __init__(
+        self,
+        connection: Type["Connection"],
+        exchange: Type["Exchange"],
+        *,
+        queue_name: str,
+        routing_key: str,
+        use_deadletter: bool = True,
+    ):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.connection = connection
         self.channel = connection.channel()
         self.exchange = exchange(self.channel)
         self.exchange.declare()
-        queue_arguments = (
-            {
-                "x-dead-letter-exchange": self.exchange.name + "_dlx",
+
+        if use_deadletter:
+            dlx_name = self.exchange.name + "-dlx"
+            deadletter_exchange = Exchange(
+                name=dlx_name,
+                type="fanout",
+                durable=True,
+                delivery_mode="persistent",
+                auto_delete=False,
+            )
+            deadletter_queue = Queue(
+                name=deadletter_exchange.name + "-queue",
+                exchange=deadletter_exchange,
+                durable=True,
+                auto_delete=False,
+            )
+
+            deadletter_queue(self.channel).declare()
+            queue_arguments = {
+                "x-dead-letter-exchange": dlx_name,
                 "x-dead-letter-routing-key": "deadletter",
             }
-            if use_deadletter
-            else {}
-        )
+
+        else:
+            queue_arguments = {}
+
         queue = Queue(
-            self.queue_name,
+            queue_name,
             durable=True,
             exchange=self.exchange,
-            routing_key=self.routing_key,
+            routing_key=routing_key,
             queue_arguments=queue_arguments,
         )
         self.queue = queue(self.channel)

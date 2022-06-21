@@ -1,13 +1,13 @@
 import logging
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
-from kombu import Producer, producers
+from kombu import producers
 
 from .schemas import ActivitySchema
 
 if TYPE_CHECKING:
-    from kombu import BrokerConnection, Exchange
+    from kombu import Connection, Exchange, Producer
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +19,8 @@ RETRY_POLICY: dict = {
 }
 
 
-def send_activity(
-    connection: "BrokerConnection",
+def send_message(
+    connection: "Connection",
     exchange: "Exchange",
     payload: dict,
     routing_key: str,
@@ -29,8 +29,8 @@ def send_activity(
 
     retry_policy = retry_policy or RETRY_POLICY
     try:
-        with producers[connection].acquire(block=True) as producer:  # type: Producer
-            producer = cast(Producer, producer)
+        producer: "Producer"
+        with producers[connection].acquire(block=True) as producer:
             producer.publish(
                 payload,
                 exchange=exchange,
@@ -46,7 +46,7 @@ def send_activity(
 
 
 def verify_payload_and_send_activity(
-    connection: "BrokerConnection",
+    connection: "Connection",
     exchange: "Exchange",
     payload: dict,
     routing_key: str,
@@ -58,4 +58,4 @@ def verify_payload_and_send_activity(
         logger.exception("Failed to validate payload: %s", payload)
         raise
 
-    send_activity(connection, exchange, verified_payload, routing_key, retry_policy)
+    send_message(connection, exchange, verified_payload, routing_key, retry_policy)

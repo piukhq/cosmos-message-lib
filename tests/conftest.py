@@ -7,7 +7,7 @@ import pytest
 from kombu import Connection, Exchange, Queue
 
 from cosmos_message_lib.connection import get_connection_and_exchange
-from cosmos_message_lib.consumer import ActivityConsumer
+from cosmos_message_lib.consumer import AbstractMessageConsumer
 
 if TYPE_CHECKING:
     from kombu import Message
@@ -15,10 +15,7 @@ if TYPE_CHECKING:
 RABBITMQ_DSN = os.getenv("RABBIT_DSN") or "amqp://guest:guest@localhost:5672/"
 
 
-class TestActivityConsumer(ActivityConsumer):
-    queue_name = "test-queue"
-    routing_key = "test"
-
+class TestActivityConsumer(AbstractMessageConsumer):
     def on_message(self, body: dict, message: Type["Message"]) -> None:
         self.logger.info(body)
         message.ack()
@@ -36,7 +33,7 @@ def setup_activity_consumer(
     connection_and_exchange: tuple[Connection, Exchange]
 ) -> Generator[TestActivityConsumer, None, None]:
     conn, ex = connection_and_exchange
-    consumer = TestActivityConsumer(conn, ex)
+    consumer = TestActivityConsumer(conn, ex, queue_name="test-queue", routing_key="test")
 
     yield consumer
 
@@ -51,7 +48,7 @@ def clean_deadletter_queue_and_exchange(
     conn, _ = connection_and_exchange
 
     exchange = Exchange(
-        name="test-exchange_dlx",
+        name="test-exchange-dlx",
         type="fanout",
         durable=True,
         delivery_mode="persistent",
@@ -59,7 +56,7 @@ def clean_deadletter_queue_and_exchange(
         no_declare=False,
     )
     queue = Queue(
-        name=exchange.name + "_queue",
+        name=exchange.name + "-queue",
         exchange=exchange,
         durable=True,
         auto_delete=False,
