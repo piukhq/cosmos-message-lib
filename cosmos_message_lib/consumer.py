@@ -29,23 +29,25 @@ class AbstractMessageConsumer(ConsumerMixin, metaclass=ABCMeta):
         self.exchange = exchange(self.channel)
         self.exchange.declare()
 
+        self.deadletter_exchange: Exchange | None = None
+        self.deadletter_queue: Queue | None = None
         if use_deadletter:
             dlx_name = self.exchange.name + "-dlx"
-            deadletter_exchange = Exchange(
+            self.deadletter_exchange = Exchange(
                 name=dlx_name,
                 type="fanout",
                 durable=True,
                 delivery_mode="persistent",
                 auto_delete=False,
             )
-            deadletter_queue = Queue(
-                name=deadletter_exchange.name + "-queue",
-                exchange=deadletter_exchange,
+            self.deadletter_queue = Queue(
+                name=self.deadletter_exchange.name + "-queue",
+                exchange=self.deadletter_exchange,
                 durable=True,
                 auto_delete=False,
             )
 
-            deadletter_queue(self.channel).declare()
+            self.deadletter_queue(self.channel).declare()
             queue_arguments = {
                 "x-dead-letter-exchange": dlx_name,
                 "x-dead-letter-routing-key": "deadletter",
