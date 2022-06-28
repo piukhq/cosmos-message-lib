@@ -1,7 +1,8 @@
+import uuid
+
 from datetime import datetime as dt
 from datetime import timezone
 from typing import Generator
-from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, validator
 from pydantic.datetime_parse import parse_datetime
@@ -26,20 +27,28 @@ class utc_datetime(dt):  # pylint: disable=invalid-name
 
 
 class ActivitySchema(BaseModel):
-    id: UUID = Field(default_factory=uuid4)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4)
     type: ActivityType
     datetime: utc_datetime
     underlying_datetime: utc_datetime
     summary: str
     reasons: list[str]
     activity_identifier: str
-    user_id: UUID
+    user_id: str
     associated_value: str
     retailer: str
     campaigns: list[str]
     data: dict
 
-    @validator("id", "user_id", always=True)
+    @validator("id", always=True, pre=False)
     @classmethod
-    def uuid_to_str(cls, value: UUID) -> str:
+    def uuid_to_str(cls, value: uuid.UUID) -> str:
         return str(value)
+
+    @validator("user_id", always=True, pre=True)
+    @classmethod
+    def parse_user_id(cls, value: uuid.UUID | str) -> str:
+        if isinstance(value, uuid.UUID):
+            return str(value)
+
+        return value
