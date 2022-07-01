@@ -9,6 +9,7 @@ class ActivityType(Enum):
     TX_HISTORY = auto()
     ACCOUNT_ENROLMENT = auto()
     ACCOUNT_AUTHENTICATION = auto()
+    ACCOUNT_CHANGE = auto()
 
     @classmethod
     def __get_validators__(cls) -> "CallableGenerator":
