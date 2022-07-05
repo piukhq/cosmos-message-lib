@@ -7,8 +7,6 @@ from typing import Generator
 from pydantic import BaseModel, Field, validator
 from pydantic.datetime_parse import parse_datetime
 
-from .enums import ActivityType
-
 
 # Adapted from StackOverflow: https://stackoverflow.com/questions/66548586/how-to-change-date-format-in-pydantic
 class utc_datetime(dt):  # pylint: disable=invalid-name
@@ -28,7 +26,7 @@ class utc_datetime(dt):  # pylint: disable=invalid-name
 
 class ActivitySchema(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
-    type: ActivityType
+    type: str
     datetime: utc_datetime
     underlying_datetime: utc_datetime
     summary: str
