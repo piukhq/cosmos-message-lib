@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cosmos-message-lib"
-version = "1.2.1"
+version = "0.0.0"
 readme = "README.md"
 packages = [{include = "cosmos_message_lib"}]
 description = "helpers functions and schemas for setting up activities pub/sub with kombu and rabbitmq"
@@ -34,8 +34,8 @@ pytest-mock = "^3.7.0"
 pytest-cov = "^3.0.0"
 
 [build-system]
-requires = ["poetry-core>=1.0.8"]
-build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
+build-backend = "poetry_dynamic_versioning.backend"
 
 [tool.black]
 line-length = 120
@@ -78,3 +78,6 @@ good-names=["k", "v", "i", "q", "fn", "ex"]
 extension-pkg-whitelist=[
     "pydantic",
 ]
+
+[tool.poetry-dynamic-versioning]
+enable = true
