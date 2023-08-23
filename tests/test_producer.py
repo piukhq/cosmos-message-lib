@@ -1,24 +1,27 @@
-from unittest import mock
+from pytest_mock import MockerFixture
 
-from cosmos_message_lib.producer import batch_iterable, verify_payload_and_send_activity
+from cosmos_schemas import ActivitySchema
+from message_lib.producer import MessageProducer
 
 
 def test_batch_payload() -> None:
-    assert list(batch_iterable(({} for _ in range(33)), 10)) == [
+    assert list(MessageProducer.batch_iterable(({} for _ in range(33)), 10)) == [
         [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
         [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
         [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
         [{}, {}, {}],
     ]
-    assert list(batch_iterable([{}, {}], 10)) == [[{}, {}]]
+    assert list(MessageProducer.batch_iterable([{}, {}], 10)) == [[{}, {}]]
 
 
-@mock.patch("cosmos_message_lib.producer.send_message")
-def test_verify_payload_and_send_activity(mock_send_message: mock.MagicMock) -> None:
-    verify_payload_and_send_activity(
-        connection=mock.MagicMock(),
-        exchange=mock.MagicMock(),
-        payload=({} for _ in range(2001)),
-        routing_key="route66",
-    )
+def test_verify_payload_and_send_activity(mocker: MockerFixture) -> None:
+    def mocked_init(self, *_args, **_kwargs) -> None:  # type: ignore [no-untyped-def]
+        self.connection = mocker.MagicMock()
+        self.exchange = mocker.MagicMock()
+
+    mocker.patch.object(MessageProducer, "__init__", mocked_init)
+    mock_send_message = mocker.patch.object(MessageProducer, "_send_message")
+
+    producer = MessageProducer("", "", "", "")
+    producer.send_message(payload=({} for _ in range(2001)), schema=ActivitySchema)
     assert mock_send_message.call_count == 3
