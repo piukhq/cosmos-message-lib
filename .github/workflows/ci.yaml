@@ -53,7 +53,7 @@ jobs:
           python-version: "3.11"
       - run: pip install poetry
       - run: poetry self add "poetry-dynamic-versioning[plugin]"
-      - run: poetry config repositories.pypicloud https://pypi.tools.uksouth.bink.sh/simple
+      - run: poetry config repositories.pypicloud https://pypi.gb.bink.com/simple
       - run: poetry config http-basic.pypicloud c02bed7a-4224-4fb4-82ad-17499e4d0e4a ${{ secrets.PYPICLOUD_PASSWORD }}
       - run: poetry build
       - run: poetry publish -r pypicloud
