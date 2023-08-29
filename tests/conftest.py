@@ -7,6 +7,7 @@ import pytest
 
 from kombu import Connection, Exchange, Queue
 
+from message_lib import QueueParams
 from message_lib.consumer import AbstractMessageConsumer
 from message_lib.producer import MessageProducer
 
@@ -27,15 +28,20 @@ def setup_message_producer() -> Generator[MessageProducer, None, None]:
 
     producer = MessageProducer(
         rabbitmq_dsn=RABBITMQ_DSN,
-        message_exchange_name="test-exchange",
-        queue_name="test-queue",
-        routing_key="test",
+        queues_name_and_params={
+            "test": QueueParams(
+                exchange_name="test-exchange",
+                queue_name="test-queue",
+                routing_key="test",
+            )
+        },
     )
+    assert "test" in producer.queues
 
     yield producer
 
-    producer.queue.delete()
-    producer.exchange.delete()
+    producer.queues["test"].queue.delete()
+    producer.queues["test"].exchange.delete()
     producer.connection.release()
 
 
@@ -44,9 +50,11 @@ def setup_message_consumer() -> Generator[TestMessageConsumer, None, None]:
 
     consumer = TestMessageConsumer(
         rabbitmq_dsn=RABBITMQ_DSN,
-        message_exchange_name="test-exchange",
-        queue_name="test-queue",
-        routing_key="test",
+        queue_params=QueueParams(
+            exchange_name="test-exchange",
+            queue_name="test-queue",
+            routing_key="test",
+        ),
     )
 
     yield consumer
@@ -58,7 +66,7 @@ def setup_message_consumer() -> Generator[TestMessageConsumer, None, None]:
 
 @pytest.fixture(name="deadletter_queue", autouse=True)
 def clean_deadletter_queue_and_exchange() -> Generator[Queue, None, None]:
-    conn = Connection(RABBITMQ_DSN, transport_options={"confirm_publish": True})
+    conn = Connection(RABBITMQ_DSN)
     exchange = Exchange(
         name="test-exchange-dlx",
         type="fanout",
