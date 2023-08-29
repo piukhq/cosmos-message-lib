@@ -1,28 +1,24 @@
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING
 from unittest.mock import ANY, Mock
 
 from kombu import Consumer
 from pytest_mock import MockerFixture
 
-from cosmos_message_lib.producer import send_message
-
 if TYPE_CHECKING:
 
     from kombu import Message, Queue
 
-    from .conftest import TestActivityConsumer
+    from message_lib.producer import MessageProducer
+    from tests.conftest import TestMessageConsumer
 
 
-def test_send_and_receive_ok(consumer: "TestActivityConsumer", mocker: MockerFixture) -> None:
+def test_send_and_receive_ok(
+    consumer: "TestMessageConsumer", producer: "MessageProducer", mocker: MockerFixture
+) -> None:
     mock_logger = mocker.patch.object(consumer, "logger")
 
     payload = {"test": "payload"}
-    send_message(
-        consumer.connection,
-        consumer.exchange,
-        payload,
-        consumer.queue.routing_key,
-    )
+    producer.send_message(payload)
 
     for _ in consumer.consume(limit=1):
         pass
@@ -31,20 +27,14 @@ def test_send_and_receive_ok(consumer: "TestActivityConsumer", mocker: MockerFix
 
 
 def test_send_and_receive_deadletter(
-    consumer: "TestActivityConsumer", deadletter_queue: "Queue", mocker: MockerFixture
+    consumer: "TestMessageConsumer", producer: "MessageProducer", deadletter_queue: "Queue", mocker: MockerFixture
 ) -> None:
 
     mock_logger = mocker.patch.object(consumer, "logger")
     payload = {"test": "payload"}
-    send_message(
-        consumer.connection,
-        consumer.exchange,
-        payload,
-        consumer.queue.routing_key,
-    )
+    producer.send_message(payload)
 
-    # pylint: disable=unused-argument
-    def on_message(body: dict, message: Type["Message"]) -> None:
+    def on_message(body: dict, message: type["Message"]) -> None:
         message.reject(requeue=False)
 
     mocker.patch.object(consumer, "on_message", on_message)
@@ -53,8 +43,7 @@ def test_send_and_receive_deadletter(
 
     mock_logger.info.assert_not_called()
 
-    # pylint: disable=unused-argument
-    def deadletter_callback(body: dict, message: Type["Message"]) -> None:
+    def deadletter_callback(body: dict, message: type["Message"]) -> None:
         message.ack()
 
     mock_callback = Mock(wraps=deadletter_callback)

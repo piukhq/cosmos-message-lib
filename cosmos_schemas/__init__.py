@@ -1,15 +1,19 @@
+import sys
 import uuid
 
+from collections.abc import Generator
+from datetime import UTC
 from datetime import datetime as dt
-from datetime import timezone
-from typing import Generator
 
-from pydantic import BaseModel, Field, validator
-from pydantic.datetime_parse import parse_datetime
+try:
+    from pydantic import BaseModel, Field, validator
+    from pydantic.datetime_parse import parse_datetime
+except ImportError:
+    sys.exit("Pydantic extra not installed.")
 
 
 # Adapted from StackOverflow: https://stackoverflow.com/questions/66548586/how-to-change-date-format-in-pydantic
-class utc_datetime(dt):  # pylint: disable=invalid-name
+class UTCDatetime(dt):
     @classmethod
     def __get_validators__(cls) -> Generator:
         yield parse_datetime
@@ -19,16 +23,16 @@ class utc_datetime(dt):  # pylint: disable=invalid-name
     def ensure_tzinfo(cls, v: dt) -> dt:
 
         if v.tzinfo is None:
-            return v.replace(tzinfo=timezone.utc)
+            return v.replace(tzinfo=UTC)
 
-        return v.astimezone(timezone.utc)
+        return v.astimezone(UTC)
 
 
 class ActivitySchema(BaseModel):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4)
-    type: str
-    datetime: utc_datetime
-    underlying_datetime: utc_datetime
+    id: uuid.UUID = Field(default_factory=uuid.uuid4)  # noqa: A003
+    type: str  # noqa: A003
+    datetime: UTCDatetime
+    underlying_datetime: UTCDatetime
     summary: str
     reasons: list[str]
     activity_identifier: str
