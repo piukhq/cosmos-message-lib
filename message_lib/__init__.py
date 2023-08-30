@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from kombu import Connection, Exchange, Queue
@@ -8,27 +9,29 @@ if TYPE_CHECKING:
     from loguru import Logger
 
 
+@dataclass
+class QueueParams:
+    queue_name: str
+    routing_key: str
+    exchange_name: str
+    exchange_type: str = "topic"
+    use_deadletter: bool = True
+
+
 class MessageBase:
-    def __init__(  # noqa: PLR0913
-        self,
-        rabbitmq_dsn: str,
-        message_exchange_name: str,
-        queue_name: str,
-        routing_key: str,
-        use_deadletter: bool = True,
-        custom_log: "Logger | None" = None,
-    ):
-        self.connection = Connection(rabbitmq_dsn, transport_options={"confirm_publish": True})
-        channel = self.connection.channel()
-        exchange = Exchange(message_exchange_name, type="topic", durable=True, delivery_mode="persistent")
+    def __init__(self, connection: Connection, queue_params: QueueParams, custom_log: "Logger | None" = None):
+        channel = connection.channel()
+        exchange = Exchange(
+            queue_params.exchange_name, type=queue_params.exchange_type, durable=True, delivery_mode="persistent"
+        )
         self.exchange = exchange(channel)
         self.logger = custom_log or logger
         self.exchange.declare()
-        self.routing_key = routing_key
+        self.routing_key = queue_params.routing_key
 
         self.deadletter_exchange: Exchange | None = None
         self.deadletter_queue: Queue | None = None
-        if use_deadletter:
+        if queue_params.use_deadletter:
             dlx_name = exchange.name + "-dlx"
             self.deadletter_exchange = Exchange(
                 name=dlx_name,
@@ -54,10 +57,10 @@ class MessageBase:
             queue_arguments = {}
 
         queue = Queue(
-            queue_name,
+            queue_params.queue_name,
             durable=True,
             exchange=exchange,
-            routing_key=routing_key,
+            routing_key=self.routing_key,
             queue_arguments=queue_arguments,
         )
         self.queue = queue(channel)

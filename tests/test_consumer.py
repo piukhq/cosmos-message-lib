@@ -18,7 +18,7 @@ def test_send_and_receive_ok(
     mock_logger = mocker.patch.object(consumer, "logger")
 
     payload = {"test": "payload"}
-    producer.send_message(payload)
+    producer.queues["test"].send_message(payload)
 
     for _ in consumer.consume(limit=1):
         pass
@@ -32,7 +32,7 @@ def test_send_and_receive_deadletter(
 
     mock_logger = mocker.patch.object(consumer, "logger")
     payload = {"test": "payload"}
-    producer.send_message(payload)
+    producer.queues["test"].send_message(payload)
 
     def on_message(body: dict, message: type["Message"]) -> None:
         message.reject(requeue=False)
