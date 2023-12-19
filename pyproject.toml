@@ -81,5 +81,3 @@ extension-pkg-whitelist=[
 
 [tool.poetry-dynamic-versioning]
 enable = true
-vcs = "git"
-pattern = '^((?P<epoch>\d+)!)?(?P<base>\d+(\.\d+)*)'
